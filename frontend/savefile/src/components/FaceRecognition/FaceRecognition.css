@@ -1,0 +1,21 @@
+.image-container {
+  position: relative;
+  display: inline-block; /* Ensures size wraps image */
+}
+
+.small-img {
+  width: 300px;
+  height: auto;
+  display: block;
+}
+
+.bounding-box {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 3px #149df2 inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9999;
+}
