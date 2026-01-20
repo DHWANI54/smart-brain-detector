@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import * as faceapi from 'face-api.js';
 import Navigation from "./components/logo/Navigation/Navigation";
 import Logo from "./components/logo/Logo";
 import ImageLinkForm from "./components/logo/ImageLinkForm/ImageLinkForm";
@@ -25,28 +24,8 @@ class App extends Component {
         email: '',
         entries: 0,
         joined: ''
-      },
-      modelLoaded: false,
-      statusMessage: '' // User feedback on status
+      }
     };
-  }
-
-  componentDidMount() {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      this.loadUser(JSON.parse(storedUser));
-    }
-    this.loadModels();
-  }
-
-  loadModels = async () => {
-    try {
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      console.log('FaceAPI Models Loaded');
-      this.setState({ modelLoaded: true });
-    } catch (err) {
-      console.log('Error loading models:', err);
-    }
   }
 
   loadUser = (data) => {
@@ -61,146 +40,80 @@ class App extends Component {
     localStorage.setItem('user', JSON.stringify(userData));
   }
 
-  calculateFaceLocation = (data) => {
-    const face = data.box;
-    return {
-      left: face.x,
-      top: face.y,
-      width: face.width,
-      height: face.height
-    };
+  componentDidMount() {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      this.loadUser(JSON.parse(storedUser));
+    }
   }
 
   displayFaceBox = (box) => {
-    this.setState({ box: box });
+    this.setState({ box });
   }
 
-  onInputChange = (event) => {
-    this.setState({ input: event.target.value });
-  }
+  onInputChange = (event) => this.setState({ input: event.target.value });
 
-  onFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // Resetting input to avoid confusion if they click detect later
-        this.setState({
-          imageUrl: e.target.result,
-          box: {},
-          input: '', // Clear URL input when uploading
-          statusMessage: 'Analyzing image...'
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  }
+  onButtonSubmit = async () => {
+  this.setState({ imageUrl: this.state.input });
+  const dummyBox = { leftCol: 100, topRow: 100, rightCol: 50, bottomRow: 50 };
 
-  onImageLoaded = async () => {
-    if (this.state.imageUrl && this.state.modelLoaded) {
-      try {
-        const image = document.getElementById('inputimage');
-        // Detect face
-        const detection = await faceapi.detectSingleFace(image, new faceapi.TinyFaceDetectorOptions());
+  try {
+    const API_BASE_URL = await getApiBaseUrl();
+    const response = await fetch(API_BASE_URL + '/image', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: this.state.user.id })
+    });
+    const count = await response.json();
 
-        if (detection) {
-          const displaySize = { width: image.width, height: image.height };
-          const resizedDetections = faceapi.resizeResults(detection, displaySize);
-
-          this.displayFaceBox(this.calculateFaceLocation(resizedDetections));
-          this.setState({ statusMessage: 'Face Detected!' });
-          this.updateEntries();
-        } else {
-          this.setState({ box: {}, statusMessage: 'No Human Face Detected' });
-          this.updateEntries();
-        }
-      } catch (error) {
-        console.log("Detection error:", error);
-        this.setState({ statusMessage: 'Error detecting face' });
-      }
-    }
-  }
-
-  updateEntries = async () => {
-    if (!this.state.user.id) return;
-    try {
-      const API_BASE_URL = await getApiBaseUrl();
-      const response = await fetch(API_BASE_URL + '/image', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: this.state.user.id })
+    if (count !== undefined) {
+      
+      this.setState(prevState => {
+        const updatedUser = { ...prevState.user, entries: count };
+        return { user: updatedUser };
       });
-      const count = await response.json();
-
-      if (count !== undefined) {
-        this.setState(Object.assign(this.state.user, { entries: count }));
-        localStorage.setItem('user', JSON.stringify(this.state.user));
-      }
-    } catch (err) {
-      console.log(err);
+      
+      localStorage.setItem('user', JSON.stringify({ ...this.state.user, entries: count }));
     }
+  } catch (err) {
+    console.log('Error updating entries:', err);
   }
 
-  onButtonSubmit = () => {
-    // Only update if there is actually a URL in the input
-    if (this.state.input.trim().length > 0) {
-      this.setState({
-        imageUrl: this.state.input,
-        box: {},
-        statusMessage: 'Analyzing image...'
-      });
-    }
-  }
+  this.displayFaceBox(dummyBox);
+}
+
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({
-        isSignedIn: false,
-        route: 'signin',
-        user: {},
-        imageUrl: '',
-        box: {},
-        statusMessage: ''
-      });
+      this.setState({ isSignedIn: false, route: 'signin', user: {} });
       localStorage.removeItem('user');
     } else if (route === 'home') {
       this.setState({ isSignedIn: true });
     }
-    this.setState({ route: route });
+    this.setState({ route });
   }
 
   render() {
-    const { isSignedIn, imageUrl, route, box, statusMessage } = this.state;
+    const { isSignedIn, imageUrl, box, route, user } = this.state;
+
     return (
       <div className="App">
         <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
-        {route === 'home'
-          ? <div>
+        {route === 'home' ? (
+          <div>
             <Logo />
-            <Rank
-              name={this.state.user.name}
-              entries={this.state.user.entries}
-            />
+            <Rank name={user.name || ''} entries={user.entries || 0} />
             <ImageLinkForm
               onInputChange={this.onInputChange}
               onButtonSubmit={this.onButtonSubmit}
-              onFileUpload={this.onFileUpload}
             />
-            {/* Status Message Display */}
-            <div className='white f4 pa2'>{statusMessage}</div>
-
-            <FaceRecognition
-              box={box}
-              imageUrl={imageUrl}
-              onImageLoaded={this.onImageLoaded}
-            />
+            <FaceRecognition box={box} imageUrl={imageUrl} />
           </div>
-          : (
-            route === 'signin'
-              ? <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
-              : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
-          )
-        }
+        ) : route === 'signin' ? (
+          <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+        ) : (
+          <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+        )}
       </div>
     );
   }

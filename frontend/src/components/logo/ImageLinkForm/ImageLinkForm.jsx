@@ -1,7 +1,7 @@
 import React from "react";
 import "./ImageLinkForm.css";
 
-const ImageLinkForm = ({ onInputChange, onButtonSubmit, onFileUpload }) => {
+const ImageLinkForm = ({ onInputChange, onButtonSubmit }) => {
   return (
     <div
       style={{
@@ -11,37 +11,24 @@ const ImageLinkForm = ({ onInputChange, onButtonSubmit, onFileUpload }) => {
         marginTop: "20px",
       }}
     >
-      <p className="f3 white">
+      <p className="f3">
         {"This Magic Brain will detect faces in your pictures. Give it a try."}
       </p>
       <div className="center">
-        <div className="form center pa4 br3 shadow-5 flex flex-column items-center">
-          <div className="w-100 flex mb3">
-            <input
-              className="f4 pa2 w-70 center"
-              type="text"
-              placeholder="Paste Image URL"
-              onChange={onInputChange}
-            />
-            <button
-              className="w-30 grow f4 link ph3 pv2 dib white bg-light-purple"
-              onClick={onButtonSubmit}
-            >
-              Detect
-            </button>
-          </div>
-          <div className="white f4 mv2">OR</div>
-          <div className="w-100 flex justify-center">
-            <label className="f4 link ph3 pv2 dib white bg-dark-blue pointer grow br2">
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onFileUpload}
-                style={{ display: 'none' }}
-              />
-            </label>
-          </div>
+        <div className=" form center pa4 br3 shadow-5">
+          <input
+            className="f4 pa2 w-70 center"
+            type="text"
+            onChange={onInputChange}
+          />
+
+          <button
+            className="w-30 grow f4 link ph3 pv2 dib white bg-light-purple"
+            onClick={onButtonSubmit}
+          >
+            {" "}
+            Detect
+          </button>
         </div>
       </div>
     </div>
