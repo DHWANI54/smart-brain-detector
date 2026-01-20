@@ -1,40 +1,30 @@
-import React, { useState } from "react";
-import "./FaceRecognition.css";
+import React from 'react';
+import './FaceRecognition.css';
 
-const FaceRecognition = ({ imageUrl, box }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
-
+const FaceRecognition = ({ imageUrl, box, onImageLoaded }) => {
   return (
-    <div className="center">
-      <div className="image-container">
-        {imageUrl && (
-          <img
-            id="inputimage"
-            className="small-img"
-            alt=""
-            src={imageUrl}
-            onLoad={handleImageLoad}
-          />
-        )}
-
-        {imageLoaded && (
-          <div
-            className="bounding-box"
-            style={{
-              top: "50%",
-              left: "50%",
-              width: "150px",
-              height: "150px",
-            }}
-          ></div>
+    <div className='center ma'>
+      <div className='absolute mt2 image-container'>
+        <img
+          id='inputimage'
+          alt=''
+          src={imageUrl}
+          width='500px'
+          height='auto'
+          className='small-img'
+          onLoad={onImageLoaded}
+        />
+        {box && box.width && (
+          <div className='bounding-box' style={{
+            top: box.top,
+            left: box.left,
+            width: box.width,
+            height: box.height
+          }}></div>
         )}
       </div>
     </div>
   );
-};
+}
 
 export default FaceRecognition;
